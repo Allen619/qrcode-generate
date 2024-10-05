@@ -24,7 +24,6 @@ import {
 import debounce from 'lodash-es/debounce';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Color } from 'antd/es/color-picker';
 
 const { Option } = Select;
 
@@ -35,7 +34,7 @@ const HomePage: React.FC = () => {
     size: 128,
     fgColor: '#000000',
     bgColor: 'transparent',
-    level: 'M',
+    level: 'M' as const,
     includeMargin: false,
     marginSize: 4,
     imageSettings: {
@@ -51,6 +50,8 @@ const HomePage: React.FC = () => {
   const [marginType, setMarginType] = useState('default');
   const [showMoreOptions, setShowMoreOptions] = useState(false);
   const [embedImage, setEmbedImage] = useState(false);
+  const [lastCustomFgColor, setLastCustomFgColor] = useState('#000000');
+  const [lastCustomBgColor, setLastCustomBgColor] = useState('#ffffff');
 
   const qrCodeRef = useRef<SVGSVGElement>(null);
 
@@ -114,37 +115,73 @@ const HomePage: React.FC = () => {
   }, [form, debouncedSetQrOptions]);
 
   const handleValuesChange = (changedValues: any, allValues: any) => {
+    let updatedValues = { ...allValues };
+
     if ('fgColorType' in changedValues) {
       setFgColorType(changedValues.fgColorType);
       if (changedValues.fgColorType === 'default') {
-        allValues.fgColor = '#000000';
+        updatedValues.fgColor = '#000000';
+      } else if (changedValues.fgColorType === 'custom') {
+        updatedValues.fgColor = lastCustomFgColor;
       }
     }
+
     if ('bgColorType' in changedValues) {
       setBgColorType(changedValues.bgColorType);
       if (changedValues.bgColorType === 'none') {
-        allValues.bgColor = 'transparent';
+        updatedValues.bgColor = 'transparent';
+      } else if (changedValues.bgColorType === 'custom') {
+        updatedValues.bgColor = lastCustomBgColor;
       }
     }
+
     if ('fgColor' in changedValues) {
-      allValues.fgColor = (changedValues.fgColor as Color).toHexString();
+      const newColor = typeof changedValues.fgColor === 'object' && 'toHexString' in changedValues.fgColor
+        ? changedValues.fgColor.toHexString()
+        : changedValues.fgColor;
+      updatedValues.fgColor = newColor;
+      setLastCustomFgColor(newColor);
     }
+
     if ('bgColor' in changedValues) {
-      allValues.bgColor = (changedValues.bgColor as Color).toHexString();
+      const newColor = typeof changedValues.bgColor === 'object' && 'toHexString' in changedValues.bgColor
+        ? changedValues.bgColor.toHexString()
+        : changedValues.bgColor;
+      updatedValues.bgColor = newColor;
+      setLastCustomBgColor(newColor);
     }
+
+    // 确保 fgColor 和 bgColor 总是字符串
+    if (updatedValues.fgColor && typeof updatedValues.fgColor === 'object') {
+      updatedValues.fgColor = updatedValues.fgColor.toHexString();
+    }
+
+    if (updatedValues.bgColor && typeof updatedValues.bgColor === 'object') {
+      updatedValues.bgColor = updatedValues.bgColor.toHexString();
+    }
+
+    // 确保前景色和背景色不同，且背景色不为透明时才进行比较
+    if (updatedValues.bgColor !== 'transparent' && updatedValues.fgColor === updatedValues.bgColor) {
+      if (updatedValues.fgColor === '#000000') {
+        updatedValues.bgColor = '#ffffff';
+      } else {
+        updatedValues.fgColor = '#000000';
+      }
+    }
+
     if ('sizeType' in changedValues) {
       setSizeType(changedValues.sizeType);
     }
     if ('marginType' in changedValues) {
       setMarginType(changedValues.marginType);
       if (changedValues.marginType === 'default') {
-        allValues.marginSize = 4;
+        updatedValues.marginSize = 4;
       }
     }
     if ('embedImage' in changedValues) {
       setEmbedImage(changedValues.embedImage);
       if (!changedValues.embedImage) {
-        allValues.imageSettings = {
+        updatedValues.imageSettings = {
           src: '',
           width: 24,
           height: 24,
@@ -154,16 +191,16 @@ const HomePage: React.FC = () => {
     }
     if ('imageSettings' in changedValues) {
       if ('width' in changedValues.imageSettings) {
-        allValues.imageSettings.height = changedValues.imageSettings.width;
+        updatedValues.imageSettings.height = changedValues.imageSettings.width;
       } else if ('height' in changedValues.imageSettings) {
-        allValues.imageSettings.width = changedValues.imageSettings.height;
+        updatedValues.imageSettings.width = changedValues.imageSettings.height;
       }
       // 添加对excavate的处理
       if ('excavate' in changedValues.imageSettings) {
-        allValues.imageSettings.excavate = changedValues.imageSettings.excavate;
+        updatedValues.imageSettings.excavate = changedValues.imageSettings.excavate;
       }
     }
-    debouncedSetQrOptions(allValues);
+    debouncedSetQrOptions(updatedValues);
   };
 
   return (
@@ -176,11 +213,13 @@ const HomePage: React.FC = () => {
               name="qr-form"
               initialValues={{
                 ...qrOptions,
-                fgColorType,
-                bgColorType,
-                sizeType,
-                marginType,
-                embedImage,
+                fgColorType: 'default',
+                bgColorType: 'none',
+                fgColor: lastCustomFgColor,  // 添加这行
+                bgColor: lastCustomBgColor,  // 添加这行
+                sizeType: 'preset',
+                marginType: 'default',
+                embedImage: false,
               }}
               onValuesChange={handleValuesChange}
               layout="vertical"
@@ -241,6 +280,7 @@ const HomePage: React.FC = () => {
                   />
                 </Form.Item>
               )}
+            
               <Form.Item
                 name="fgColorType"
                 label="前景色"
@@ -418,7 +458,7 @@ const HomePage: React.FC = () => {
                   onClick={copyQRCode}
                   className="text-white bg-blue-500 rounded-md"
                 >
-                  复制图片
+                  复制二维码
                 </Button>
                 <Button
                   icon={<DownloadOutlined />}
