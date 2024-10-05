@@ -1,3 +1,4 @@
+import '@/styles/custom.css';
 import {
   CopyOutlined,
   DownloadOutlined,
@@ -205,8 +206,8 @@ const HomePage: React.FC = () => {
 
   return (
     <PageContainer ghost>
-      <Row gutter={24} className="p-6">
-        <Col span={12}>
+      <Row gutter={[24, 24]}>
+        <Col xs={24} lg={12}>
           <Card title="二维码生成器设置" bordered={false} className="shadow-lg">
             <Form
               form={form}
@@ -442,17 +443,17 @@ const HomePage: React.FC = () => {
             </Form>
           </Card>
         </Col>
-        <Col span={12}>
+        <Col xs={24} lg={12}>
           <Card title="生成的二维码" bordered={false} className="shadow-lg">
             <Space
               direction="vertical"
               align="center"
               style={{ width: '100%' }}
             >
-              <div className="p-4 rounded-lg border border-gray-300">
+              <div className="overflow-auto p-4 max-w-full rounded-lg border border-gray-300">
                 <QRCodeSVG ref={qrCodeRef} {...qrOptions} />
               </div>
-              <Space>
+              <Space wrap>
                 <Button
                   icon={<CopyOutlined />}
                   onClick={copyQRCode}
