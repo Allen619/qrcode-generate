@@ -21,6 +21,7 @@ import {
   Space,
   Switch,
   ColorPicker,
+  Modal,
 } from 'antd';
 import debounce from 'lodash-es/debounce';
 import { QRCodeSVG } from 'qrcode.react';
@@ -56,6 +57,19 @@ const HomePage: React.FC = () => {
 
   const qrCodeRef = useRef<SVGSVGElement>(null);
 
+  const fallbackCopyMethod = (imageData: string) => {
+    Modal.info({
+      title: '复制二维码',
+      content: (
+        <div>
+        <p>您的设备不支持自动复制。请长按下方图片并选择&quot;复制图片&quot;。</p>
+        <img src={imageData} alt="QR Code" style={{ maxWidth: '100%' }} />
+      </div>
+      ),
+      okText: '关闭',
+    });
+  };
+
   const copyQRCode = () => {
     if (qrCodeRef.current) {
       const svgData = new XMLSerializer().serializeToString(qrCodeRef.current);
@@ -65,23 +79,33 @@ const HomePage: React.FC = () => {
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
-        ctx?.drawImage(img, 0, 0);
+        if (ctx) {
+          ctx.fillStyle = qrOptions.bgColor === 'transparent' ? '#ffffff' : qrOptions.bgColor;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+        }
         canvas.toBlob((blob) => {
           if (blob) {
-            navigator.clipboard
-              .write([new ClipboardItem({ 'image/png': blob })])
-              .then(() => {
-                message.success('二维码已复制到剪贴板');
-              })
-              .catch(() => {
-                message.error('复制失败，请重试');
-              });
+            if (navigator.clipboard && navigator.clipboard.write) {
+              navigator.clipboard
+                .write([new ClipboardItem({ 'image/png': blob })])
+                .then(() => {
+                  message.success('二维码已复制到剪贴板');
+                })
+                .catch(() => {
+                  fallbackCopyMethod(canvas.toDataURL('image/png'));
+                });
+            } else {
+              fallbackCopyMethod(canvas.toDataURL('image/png'));
+            }
           }
-        });
+        }, 'image/png');
       };
-      img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     }
   };
+
+ 
 
   const downloadQRCode = () => {
     if (qrCodeRef.current) {
@@ -92,14 +116,33 @@ const HomePage: React.FC = () => {
       img.onload = () => {
         canvas.width = img.width;
         canvas.height = img.height;
-        ctx?.drawImage(img, 0, 0);
+        if (ctx) {
+          ctx.fillStyle = qrOptions.bgColor === 'transparent' ? '#ffffff' : qrOptions.bgColor;
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+        }
         const pngFile = canvas.toDataURL('image/png');
-        const downloadLink = document.createElement('a');
-        downloadLink.download = 'qrcode.png';
-        downloadLink.href = pngFile;
-        downloadLink.click();
+        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+          // 移动设备
+          Modal.info({
+            title: '下载二维码',
+            content: (
+              <div>
+                <p>请长按下方图片并选择&quot;保存图片&quot;。</p>
+                <img src={pngFile} alt="QR Code" style={{ maxWidth: '100%' }} />
+              </div>
+            ),
+            okText: '关闭',
+          });
+        } else {
+          // 桌面设备
+          const downloadLink = document.createElement('a');
+          downloadLink.download = 'qrcode.png';
+          downloadLink.href = pngFile;
+          downloadLink.click();
+        }
       };
-      img.src = 'data:image/svg+xml;base64,' + btoa(svgData);
+      img.src = 'data:image/svg+xml;base64,' + btoa(unescape(encodeURIComponent(svgData)));
     }
   };
 
@@ -453,18 +496,18 @@ const HomePage: React.FC = () => {
               <div className="overflow-auto p-4 max-w-full rounded-lg border border-gray-300">
                 <QRCodeSVG ref={qrCodeRef} {...qrOptions} />
               </div>
-              <Space wrap>
+              <Space wrap className="justify-center w-full">
                 <Button
                   icon={<CopyOutlined />}
                   onClick={copyQRCode}
-                  className="text-white bg-blue-500 rounded-md"
+                  className="text-white bg-blue-500 rounded-md mobile-action-btn"
                 >
                   复制二维码
                 </Button>
                 <Button
                   icon={<DownloadOutlined />}
                   onClick={downloadQRCode}
-                  className="text-white bg-green-500 rounded-md"
+                  className="text-white bg-green-500 rounded-md mobile-action-btn"
                 >
                   导出图片
                 </Button>

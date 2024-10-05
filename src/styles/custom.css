@@ -14,4 +14,17 @@
   .ant-space {
     gap: 8px !important;
   }
+
+  .mobile-action-btn {
+    width: 100% !important;
+    height: 44px !important;
+    font-size: 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+  }
+
+  .ant-space-item {
+    width: 100%;
+  }
 }
