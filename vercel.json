@@ -1,0 +1,11 @@
+{
+  "buildCommand": "max build",
+  "outputDirectory": "dist",
+  "framework": "umi",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
