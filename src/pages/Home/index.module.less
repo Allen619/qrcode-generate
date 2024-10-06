@@ -1,0 +1,41 @@
+.qrCodeContainer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+  min-height: 200px; 
+}
+
+.qrCodeWrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+
+  svg {
+    max-width: 100%;
+    height: auto;
+    border: 1px solid #d9d9d9; 
+    padding: 10px; 
+  }
+}
+
+.actionButtons {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.qrCode {
+  border: 1px solid #d9d9d9;
+  padding: 10px;
+}
+
+@media (max-width: 768px) {
+  .qrCodeContainer {
+    min-height: 200px; 
+  }
+}

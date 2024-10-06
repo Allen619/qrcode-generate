@@ -22,17 +22,21 @@ import {
   Switch,
   ColorPicker,
   Modal,
+  Affix,
 } from 'antd';
 import debounce from 'lodash-es/debounce';
 import { QRCodeSVG } from 'qrcode.react';
 import { useCallback, useEffect, useRef, useState } from 'react';
+import styles from './index.module.less';
 
 const { Option } = Select;
+
+const isMobile = () => /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
 
 const HomePage: React.FC = () => {
   const [form] = Form.useForm();
   const [qrOptions, setQrOptions] = useState({
-    value: 'https://szy-allen.com',
+    value: 'https://szy-allen.cn',
     size: 128,
     fgColor: '#000000',
     bgColor: 'transparent',
@@ -71,6 +75,10 @@ const HomePage: React.FC = () => {
   };
 
   const copyQRCode = () => {
+    if (isMobile()) {
+      // 移动设备不执行复制操作
+      return;
+    }
     if (qrCodeRef.current) {
       const svgData = new XMLSerializer().serializeToString(qrCodeRef.current);
       const canvas = document.createElement('canvas');
@@ -122,7 +130,7 @@ const HomePage: React.FC = () => {
           ctx.drawImage(img, 0, 0);
         }
         const pngFile = canvas.toDataURL('image/png');
-        if (/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
+        if (isMobile()) {
           // 移动设备
           Modal.info({
             title: '下载二维码',
@@ -259,8 +267,8 @@ const HomePage: React.FC = () => {
                 ...qrOptions,
                 fgColorType: 'default',
                 bgColorType: 'none',
-                fgColor: lastCustomFgColor,  // 添加这行
-                bgColor: lastCustomBgColor,  // 添加这行
+                fgColor: lastCustomFgColor,  
+                bgColor: lastCustomBgColor, 
                 sizeType: 'preset',
                 marginType: 'default',
                 embedImage: false,
@@ -487,33 +495,61 @@ const HomePage: React.FC = () => {
           </Card>
         </Col>
         <Col xs={24} lg={12}>
-          <Card title="生成的二维码" bordered={false} className="shadow-lg">
-            <Space
-              direction="vertical"
-              align="center"
-              style={{ width: '100%' }}
-            >
-              <div className="overflow-auto p-4 max-w-full rounded-lg border border-gray-300">
-                <QRCodeSVG ref={qrCodeRef} {...qrOptions} />
+          {isMobile() ? (
+            <Card title="生成的二维码" bordered={false} className="shadow-lg">
+              <div className={styles.qrCodeContainer}>
+                <div className={styles.qrCodeWrapper}>
+                  <QRCodeSVG ref={qrCodeRef} {...qrOptions} className={styles.qrCode} />
+                </div>
+                <Space wrap className={styles.actionButtons}>
+                  {!isMobile() && (
+                    <Button
+                      icon={<CopyOutlined />}
+                      onClick={copyQRCode}
+                      className="text-white bg-blue-500 rounded-md mobile-action-btn"
+                    >
+                      复制二维码
+                    </Button>
+                  )}
+                  <Button
+                    icon={<DownloadOutlined />}
+                    onClick={downloadQRCode}
+                    className="text-white bg-green-500 rounded-md mobile-action-btn"
+                  >
+                    导出图片
+                  </Button>
+                </Space>
               </div>
-              <Space wrap className="justify-center w-full">
-                <Button
-                  icon={<CopyOutlined />}
-                  onClick={copyQRCode}
-                  className="text-white bg-blue-500 rounded-md mobile-action-btn"
-                >
-                  复制二维码
-                </Button>
-                <Button
-                  icon={<DownloadOutlined />}
-                  onClick={downloadQRCode}
-                  className="text-white bg-green-500 rounded-md mobile-action-btn"
-                >
-                  导出图片
-                </Button>
-              </Space>
-            </Space>
-          </Card>
+            </Card>
+          ) : (
+            <Affix offsetTop={20}>
+              <Card title="生成的二维码" bordered={false} className="shadow-lg">
+                <div className={styles.qrCodeContainer}>
+                  <div className={styles.qrCodeWrapper}>
+                    <QRCodeSVG ref={qrCodeRef} {...qrOptions} className={styles.qrCode} />
+                  </div>
+                  <Space wrap className={styles.actionButtons}>
+                    {!isMobile() && (
+                      <Button
+                        icon={<CopyOutlined />}
+                        onClick={copyQRCode}
+                        className="text-white bg-blue-500 rounded-md mobile-action-btn"
+                      >
+                        复制二维码
+                      </Button>
+                    )}
+                    <Button
+                      icon={<DownloadOutlined />}
+                      onClick={downloadQRCode}
+                      className="text-white bg-green-500 rounded-md mobile-action-btn"
+                    >
+                      导出图片
+                    </Button>
+                  </Space>
+                </div>
+              </Card>
+            </Affix>
+          )}
         </Col>
       </Row>
     </PageContainer>
